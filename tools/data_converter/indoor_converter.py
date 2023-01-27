@@ -3,6 +3,7 @@ import os
 
 from tools.data_converter.scannet_data_utils import ScanNetData
 from tools.data_converter.sunrgbd_data_utils import SUNRGBDData
+from tools.data_converter.front3d_data_utils import Front3dData
 
 
 def create_indoor_info_file(data_path,
@@ -23,7 +24,7 @@ def create_indoor_info_file(data_path,
         workers (int): Number of threads to be used. Default: 4.
     """
     assert os.path.exists(data_path)
-    assert pkl_prefix in ['sunrgbd', 'sunrgbd_perspective', 'scannet']
+    assert pkl_prefix in ['sunrgbd', 'sunrgbd_perspective', 'scannet', '3dfront']
     save_path = data_path if save_path is None else save_path
     assert os.path.exists(save_path)
 
@@ -35,8 +36,13 @@ def create_indoor_info_file(data_path,
             root_path=data_path, split='train', use_v1=use_v1, monocular=monocular)
         val_dataset = SUNRGBDData(
             root_path=data_path, split='val', use_v1=use_v1, monocular=monocular)
-    else:
+    elif pkl_prefix == 'scannet':
         dataset = ScanNetData
+        train_dataset = dataset(root_path=data_path, split='train')
+        val_dataset = dataset(root_path=data_path, split='val')
+        test_dataset = dataset(root_path=data_path, split='test')
+    elif pkl_prefix == '3dfront':
+        dataset = Front3dData
         train_dataset = dataset(root_path=data_path, split='train')
         val_dataset = dataset(root_path=data_path, split='val')
         test_dataset = dataset(root_path=data_path, split='test')
