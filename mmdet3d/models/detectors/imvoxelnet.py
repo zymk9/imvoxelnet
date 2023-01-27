@@ -3,6 +3,7 @@ from mmdet.models import DETECTORS, build_backbone, build_head, build_neck
 from mmdet.models.detectors import BaseDetector
 
 from mmdet3d.core import bbox3d2result
+from mmcv.parallel import DataContainer
 
 
 @DETECTORS.register_module()
@@ -91,6 +92,15 @@ class ImVoxelNet(BaseDetector):
         return self.simple_test(img, img_metas)
 
     def simple_test(self, img, img_metas):
+        if isinstance(img, DataContainer):
+            img = img.data
+        if isinstance(img, list):
+            img = torch.cat(img, dim=0).cuda()
+            
+        if isinstance(img_metas, DataContainer):
+            img_metas = img_metas.data
+            img_metas = [x for l in img_metas for x in l]
+
         x, valids, features_2d = self.extract_feat(img, img_metas, 'test')
         x = self.bbox_head(x)
         bbox_list = self.bbox_head.get_bboxes(*x, valids.float(), img_metas)

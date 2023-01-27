@@ -18,22 +18,24 @@ class ScanNetData(object):
         self.split = split
         self.split_dir = osp.join(root_path)
         self.classes = [
-            'cabinet', 'bed', 'chair', 'sofa', 'table', 'door', 'window',
-            'bookshelf', 'picture', 'counter', 'desk', 'curtain',
-            'refrigerator', 'showercurtrain', 'toilet', 'sink', 'bathtub',
-            'garbagebin'
+            'wall', 'floor', 'cabinet', 'bed', 'chair', 'sofa', 'table', 'door', 'window',
+            'bookshelf', 'picture', 'counter', 'blinds', 'desk', 'shelves', 'curtain', 'dresser',
+            'pillow', 'mirror', 'floormat', 'clothes', 'ceiling', 'books',
+            'refrigerator', 'television', 'paper', 'towel', 'showercurtrain', 'box',
+            'whiteboard', 'person', 'nightstand', 'toilet', 
+            'sink', 'lamp', 'bathtub', 'bag', 'otherstructure', 'otherfurniture', 'otherprop'
         ]
         self.cat2label = {cat: self.classes.index(cat) for cat in self.classes}
         self.label2cat = {self.cat2label[t]: t for t in self.cat2label}
         self.cat_ids = np.array(
-            [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 24, 28, 33, 34, 36, 39])
+            range(1, 41))
         self.cat_ids2class = {
             nyu40id: i
             for i, nyu40id in enumerate(list(self.cat_ids))
         }
         assert split in ['train', 'val', 'test']
         split_file = osp.join(self.root_dir, 'meta_data',
-                              f'scannetv2_{split}.txt')
+                              f'scannet_rpn_{split}.txt')
         mmcv.check_file_exist(split_file)
         self.sample_id_list = mmcv.list_from_file(split_file)
         self.test_mode = (split == 'test')

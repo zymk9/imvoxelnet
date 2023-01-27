@@ -29,6 +29,7 @@ def create_indoor_info_file(data_path,
 
     train_filename = os.path.join(save_path, f'{pkl_prefix}_infos_train.pkl')
     val_filename = os.path.join(save_path, f'{pkl_prefix}_infos_val.pkl')
+    test_filename = os.path.join(save_path, f'{pkl_prefix}_infos_test.pkl')
     if pkl_prefix in ('sunrgbd', 'sunrgbd_perspective'):
         train_dataset = SUNRGBDData(
             root_path=data_path, split='train', use_v1=use_v1, monocular=monocular)
@@ -38,6 +39,7 @@ def create_indoor_info_file(data_path,
         dataset = ScanNetData
         train_dataset = dataset(root_path=data_path, split='train')
         val_dataset = dataset(root_path=data_path, split='val')
+        test_dataset = dataset(root_path=data_path, split='test')
 
     infos_train = train_dataset.get_infos(num_workers=workers, has_label=True)
     mmcv.dump(infos_train, train_filename, 'pkl')
@@ -46,3 +48,7 @@ def create_indoor_info_file(data_path,
     infos_val = val_dataset.get_infos(num_workers=workers, has_label=True)
     mmcv.dump(infos_val, val_filename, 'pkl')
     print(f'{pkl_prefix} info val file is saved to {val_filename}')
+
+    infos_test = test_dataset.get_infos(num_workers=workers, has_label=True)
+    mmcv.dump(infos_test, test_filename, 'pkl')
+    print(f'{pkl_prefix} info test file is saved to {test_filename}')
