@@ -110,14 +110,12 @@ class Front3dData(object):
                 annotations = {}
                 # box is of shape [k, 6 + class]
                 aligned_box_label = self.get_aligned_box_label(sample_idx)
-                # unaligned_box_label = self.get_unaligned_box_label(sample_idx)
                 annotations['gt_num'] = aligned_box_label.shape[0]
                 if annotations['gt_num'] != 0:
                     aligned_box = aligned_box_label[:, :-1]  # k, 7
-                    # unaligned_box = unaligned_box_label[:, :-1]
                     classes = aligned_box_label[:, -1]  # k
                     annotations['name'] = np.array([
-                        self.label2cat[self.cat_ids2class[classes[i]]]
+                        self.label2cat[self.cat_ids2class[int(classes[int(i)])]]
                         for i in range(annotations['gt_num'])
                     ])
                     # default names are given to aligned bbox for compatibility
@@ -125,18 +123,12 @@ class Front3dData(object):
                     annotations['location'] = aligned_box[:, :3]
                     annotations['dimensions'] = aligned_box[:, 3:6]
                     annotations['gt_boxes_upright_depth'] = aligned_box
-                    # annotations['unaligned_location'] = unaligned_box[:, :3]
-                    # annotations['unaligned_dimensions'] = unaligned_box[:, 3:6]
-                    # annotations[
-                    #     'unaligned_gt_boxes_upright_depth'] = unaligned_box
                     annotations['index'] = np.arange(
                         annotations['gt_num'], dtype=np.int32)
                     annotations['class'] = np.array([
                         self.cat_ids2class[classes[i]]
                         for i in range(annotations['gt_num'])
                     ])
-                # axis_align_matrix = self.get_axis_align_matrix(sample_idx)
-                # annotations['axis_align_matrix'] = axis_align_matrix  # 4x4
                 info['annos'] = annotations
             return info
 
