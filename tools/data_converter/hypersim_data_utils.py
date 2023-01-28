@@ -5,9 +5,9 @@ from concurrent import futures as futures
 from os import path as osp
 
 
-class Front3dData(object):
-    """3D-FRONT data.
-    Generate 3dfront infos for 3dfront_converter.
+class HypersimData(object):
+    """Hypersim data.
+    Generate Hypersim infos for Hypersim converter.
     Args:
         root_path (str): Root path of the raw data.
         split (str): Set split type of the data. Default: 'train'.
@@ -25,9 +25,10 @@ class Front3dData(object):
             nyu40id: i
             for i, nyu40id in enumerate(list(self.cat_ids))
         }
+
         assert split in ['train', 'val', 'test']
         split_file = osp.join(self.root_dir, 'meta_data',
-                              f'3dfront_rpn_{split}.txt')
+                              f'hypersim_rpn_{split}.txt')
         mmcv.check_file_exist(split_file)
         self.sample_id_list = mmcv.list_from_file(split_file)
         self.test_mode = (split == 'test')
@@ -36,19 +37,19 @@ class Front3dData(object):
         return len(self.sample_id_list)
 
     def get_aligned_box_label(self, idx):
-        box_file = osp.join(self.root_dir, '3dfront_instance_data',
+        box_file = osp.join(self.root_dir, 'hypersim_instance_data',
                             f'{idx}_aligned_bbox.npy')
         mmcv.check_file_exist(box_file)
         return np.load(box_file)
 
     def get_unaligned_box_label(self, idx):
-        box_file = osp.join(self.root_dir, '3dfront_instance_data',
+        box_file = osp.join(self.root_dir, 'hypersim_instance_data',
                             f'{idx}_unaligned_bbox.npy')
         mmcv.check_file_exist(box_file)
         return np.load(box_file)
 
     def get_axis_align_matrix(self, idx):
-        matrix_file = osp.join(self.root_dir, '3dfront_instance_data',
+        matrix_file = osp.join(self.root_dir, 'hypersim_instance_data',
                                f'{idx}_axis_align_matrix.npy')
         mmcv.check_file_exist(matrix_file)
         return np.load(matrix_file)
@@ -94,29 +95,23 @@ class Front3dData(object):
             # update with RGB image paths if exist
             if os.path.exists(osp.join(self.root_dir, 'posed_images')):
                 info['intrinsics'] = self.get_intrinsics(sample_idx)
-                all_extrinsics = self.get_extrinsics(sample_idx)
-                all_img_paths = self.get_images(sample_idx)
-                # some poses in 3D-FRONT are invalid
-                extrinsics, img_paths = [], []
-                for extrinsic, img_path in zip(all_extrinsics, all_img_paths):
-                    if np.all(np.isfinite(extrinsic)):
-                        img_paths.append(img_path)
-                        extrinsics.append(extrinsic)
-                info['extrinsics'] = extrinsics
-                info['img_paths'] = img_paths
+                info['extrinsics'] = self.get_extrinsics(sample_idx)
+                info['img_paths'] = self.get_images(sample_idx)
 
-            # 3dfront only has aligned box label
+                assert len(info['img_paths']) == len(info['extrinsics']), \
+                    f'Number of images and extrinsics do not match for ' \
+                    f'sample {sample_idx}'
+
             if has_label:
                 annotations = {}
-                # box is of shape [k, 6 + class]
+                # box is of shape [k, 7 + class]
                 aligned_box_label = self.get_aligned_box_label(sample_idx)
                 annotations['gt_num'] = aligned_box_label.shape[0]
                 if annotations['gt_num'] != 0:
                     aligned_box = aligned_box_label[:, :-1]  # k, 7
                     classes = aligned_box_label[:, -1]  # k
                     annotations['name'] = np.array([
-                        self.label2cat[self.cat_ids2class[int(classes[int(i)])]]
-                        for i in range(annotations['gt_num'])
+                        'object' for i in range(annotations['gt_num'])
                     ])
                     # default names are given to aligned bbox for compatibility
                     # we also save unaligned bbox info with marked names
@@ -125,11 +120,10 @@ class Front3dData(object):
                     annotations['gt_boxes_upright_depth'] = aligned_box
                     annotations['index'] = np.arange(
                         annotations['gt_num'], dtype=np.int32)
-                    annotations['class'] = np.array([
-                        self.cat_ids2class[classes[i]]
-                        for i in range(annotations['gt_num'])
-                    ])
+                    annotations['class'] = np.zeros(annotations['gt_num'])
+
                 info['annos'] = annotations
+
             return info
 
         sample_id_list = sample_id_list if sample_id_list is not None \

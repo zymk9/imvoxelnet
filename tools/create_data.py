@@ -139,6 +139,18 @@ def front3d_data_prep(root_path, info_prefix, out_dir, workers):
     indoor.create_indoor_info_file(
         root_path, info_prefix, out_dir, workers=workers)
 
+def hypersim_data_prep(root_path, info_prefix, out_dir, workers):
+    """Prepare the info file for Hypersim dataset.
+
+    Args:
+        root_path (str): Path of dataset root.
+        info_prefix (str): The prefix of info filenames.
+        out_dir (str): Output directory of the generated info file.
+        workers (int): Number of threads to be used.
+    """
+    indoor.create_indoor_info_file(
+        root_path, info_prefix, out_dir, workers=workers)
+
 def sunrgbd_data_prep(root_path, info_prefix, out_dir, workers, monocular):
     """Prepare the info file for sunrgbd dataset.
 
@@ -313,6 +325,13 @@ if __name__ == '__main__':
         )
     elif args.dataset == '3dfront':
         front3d_data_prep(
+            root_path=args.root_path,
+            info_prefix=args.extra_tag,
+            out_dir=args.out_dir,
+            workers=args.workers,
+        )
+    elif args.dataset == 'hypersim':
+        hypersim_data_prep(
             root_path=args.root_path,
             info_prefix=args.extra_tag,
             out_dir=args.out_dir,
