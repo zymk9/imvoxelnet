@@ -14,7 +14,8 @@ from .pipelines import (BackgroundPointsFilter, GlobalRotScaleTrans,
                         ObjectSample, PointShuffle, PointsRangeFilter,
                         RandomFlip3D, VoxelBasedPointSampler)
 from .scannet_dataset import ScanNetDataset
-from .scannet_monocular_dataset import ScanNetMultiViewDataset
+from .scannet_monocular_dataset import ScanNetMultiViewDataset, ScanNetMultiViewRPNDataset
+from .front3d_dataset import Front3DMultiViewRPNDataset
 from .sunrgbd_dataset import SUNRGBDDataset
 from .sunrgbd_monocular_dataset import (SunRgbdMultiViewDataset,
                                         SunRgbdPerspectiveMultiViewDataset, SunRgbdTotalMultiViewDataset)
@@ -30,5 +31,6 @@ __all__ = [
     'LoadAnnotations3D', 'SUNRGBDDataset', 'SunRgbdMultiViewDataset', 'SunRgbdPerspectiveMultiViewDataset',
     'SunRgbdTotalMultiViewDataset', 'ScanNetDataset', 'ScanNetMultiViewDataset',
     'Custom3DDataset', 'LoadPointsFromMultiSweeps', 'WaymoDataset', 'BackgroundPointsFilter',
-    'VoxelBasedPointSampler'
+    'VoxelBasedPointSampler',
+    'ScanNetMultiViewRPNDataset', 'Front3DMultiViewRPNDataset'
 ]

@@ -1,0 +1,85 @@
+import numpy as np
+import os.path as osp
+from collections import defaultdict
+from mmdet.datasets import DATASETS
+
+from .custom_3d import Custom3DDataset
+from mmdet3d.core.bbox import DepthInstance3DBoxes
+from .dataset_wrappers import MultiViewMixin
+
+
+@DATASETS.register_module()
+class Front3DMultiViewRPNDataset(MultiViewMixin, Custom3DDataset):
+    CLASSES = ('object',)   # for RPN
+    
+    def __init__(self,
+                 data_root,
+                 ann_file,
+                 pipeline=None,
+                 classes=None,
+                 modality=None,
+                 box_type_3d='Depth',
+                 filter_empty_gt=True,
+                 test_mode=False):
+        super().__init__(
+            data_root=data_root,
+            ann_file=ann_file,
+            pipeline=pipeline,
+            classes=classes,
+            modality=modality,
+            box_type_3d=box_type_3d,
+            filter_empty_gt=filter_empty_gt,
+            test_mode=test_mode)
+
+        # Override class labels to zeros
+        for info in self.data_infos:
+            if info['annos']['gt_num'] != 0:
+                info['annos']['class'] = np.zeros_like(info['annos']['class'])
+
+    def get_data_info(self, index):
+        info = self.data_infos[index]
+        input_dict = defaultdict(list)
+        # axis_align_matrix = info['annos']['axis_align_matrix'].astype(np.float32)
+        for i in range(len(info['img_paths'])):
+            img_filename = osp.join(self.data_root, info['img_paths'][i])
+            input_dict['img_prefix'].append(None)
+            input_dict['img_info'].append(dict(filename=img_filename))
+            extrinsic = np.linalg.inv(info['extrinsics'][i])
+            input_dict['lidar2img'].append(extrinsic.astype(np.float32))
+        input_dict = dict(input_dict)
+        origin = np.array([0.0, 3.0, -1.0])     # following SUN RGB-D setting
+        input_dict['lidar2img'] = dict(
+            extrinsic=input_dict['lidar2img'],
+            intrinsic=info['intrinsics'].astype(np.float32),
+            origin=origin.astype(np.float32)
+        )
+
+        if not self.test_mode:
+            annos = self.get_ann_info(index)
+            input_dict['ann_info'] = annos
+            if self.filter_empty_gt and len(annos['gt_bboxes_3d']) == 0:
+                return None
+        return input_dict
+
+    def get_ann_info(self, index):
+        info = self.data_infos[index]
+        if info['annos']['gt_num'] != 0:
+            gt_bboxes_3d = info['annos']['gt_boxes_upright_depth'].astype(
+                np.float32)  # k, 7
+            gt_labels_3d = info['annos']['class'].astype(np.long)
+            gt_labels_3d = np.zeros_like(gt_labels_3d)  # for RPN
+        else:
+            gt_bboxes_3d = np.zeros((0, 7), dtype=np.float32)
+            gt_labels_3d = np.zeros((0,), dtype=np.long)
+
+        # to target box structure
+        gt_bboxes_3d = DepthInstance3DBoxes(
+            gt_bboxes_3d,
+            box_dim=gt_bboxes_3d.shape[-1],
+            with_yaw=True,
+            origin=(0.5, 0.5, 0.5)).convert_to(self.box_mode_3d)
+
+        anns_results = dict(
+            gt_bboxes_3d=gt_bboxes_3d,
+            gt_labels_3d=gt_labels_3d)
+        return anns_results
